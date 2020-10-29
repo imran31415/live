@@ -1,0 +1,64 @@
+version: "2.1"
+# TODO(we need to create a wait_for_it.sh startup script to check the db port is ready in order to use V3+ for docker-compose...
+services:
+  # This is the MYSQL server,  this will/should only be using for development.
+  # In production we will set an Env variable indicating it is prod and we will
+  db:
+    restart: always
+    build:
+      context: ./mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ttianjun
+    container_name: db
+    volumes:
+      - dbdata:/var/lib/mysql
+    ports:
+      - "3306:3306"
+    tty: true
+    healthcheck:
+      test: ["CMD-SHELL", 'mysqladmin -u root -pttianjun ping']
+      interval: 10s
+      timeout: 2s
+      retries: 10
+    security_opt:
+      - seccomp:unconfined
+  backend:
+    links:
+      - db
+    depends_on:
+      db:
+        condition: service_healthy
+    build:
+      context: ./
+    container_name: backend
+    ports:
+      - "50051:50051" # GRPC server // clients can connect to this via GRPC
+      - "50052:50052" # HTTP server // clients can connect to this via HTTP
+    tty: true
+    environment:
+      - "DB_PORT=3306"
+      - "DB_HOST=db"
+      - "DB_NAME=go-admin-test"
+      - "DB_PASS=ttianjun"
+      - "ZOOM_API_SECRET=EqsVL73Iii7A5RRFMFO0vE09Qr2Rbrnxf6QU"
+    # These are test keys, prod keys managed in kube secrets
+      - "STRIPE_KEY=sk_test_51GsyCSHwDxlhc3OK2TOLCKCt7l0sjrnIZbhODUJqihayt5AdAJPmTQ8LF7gAP00PoxF0o7fe1mIXXHF0uoBwrSB000pcvulgMw"
+      - "STRIPE_WEBHOOK_SECRET=whsec_AghHDARdPXNdRYSl2YJKfkztvph0C8lO"
+      - "ZOOM_CLIENT_KEY=sOiuPrPPTOGbTLqF7YgzQ"
+      - "ZOOM_CLIENT_SECRET=oaHNMSM0E64dKsWK8wfBHhSmycyEX8nf"
+      - "ZOOM_REDIRECT_URI=http://localhost:50052/zoom_app_install_url"
+      - "ZOOM_REDIRECT_SUCCESS_URI=http://localhost:3000/zoom_success"
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: dev_pma
+    links:
+      - db
+    environment:
+      PMA_HOST: db
+      PMA_PORT: 3306
+      PMA_ARBITRARY: 1
+      restart: always
+    ports:
+      - 8183:80
+volumes:
+  dbdata:
