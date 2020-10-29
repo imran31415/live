@@ -1,7 +1,5 @@
 # Backend for zoom integrated live streaming
 
-https://imgur.com/a/7evXad3
-
 ## Quick Start: Building with Docker-compose
 
 Requirements:
