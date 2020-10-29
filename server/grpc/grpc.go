@@ -15,7 +15,7 @@ import (
 
 const (
 	paymentMethodDefault = "card"
-	signerUrl            = "https://livehub-277906.uc.r.appspot.com/sign"
+	signerUrl            = "<SIGNERURL>"
 	bucketName           = "image_distro"
 )
 
